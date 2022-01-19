@@ -13,17 +13,19 @@ if __name__ == '__main__':
     vk_api_version = '5.131.'
     vk_user_id = 840163
     vk_group_id = 210209209
+    vk_application_id = 8054782
 
     pictures_directory = 'images'
     comics = 353
     url = f'https://xkcd.com/{comics}/info.0.json'
 
-    response = requests.get(url).json()
-    print(response['alt'])
+    response = requests.get(url)
+    response.raise_for_status()
+    comics = response.json()
+    comics_title = comics['alt']
+    img_name = get_file_name(comics['img'])
 
-    img_name = get_file_name(response['img'])
-
-    save_photo(pictures_directory, img_name[1], response['img'])
+    save_photo(pictures_directory, img_name[1], comics['img'])
 
     # payloads = {
     #     'access_token': vk_access_token,
@@ -38,6 +40,45 @@ if __name__ == '__main__':
 
     }
     vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
-    album_id, upload_url, user_id = requests.get(vk_api_url, params=payloads).json()['response'].values()
-    print(album_id, '\n', upload_url, '\n', user_id)
+    response = requests.get(vk_api_url, params=payloads)
+    response.raise_for_status()
+    album_id, upload_url, user_id = response.json()['response'].values()
 
+    with open('images/python.png', 'rb') as file:
+        files = {
+            'photo': file
+        }
+
+        response = requests.post(upload_url, files=files)
+        response.raise_for_status()
+        server, photo, hash = response.json().values()
+
+    vk_api_method = 'photos.saveWallPhoto'
+
+    payloads = {
+        'user_id': user_id,
+        'group_id': vk_group_id,
+        'photo': photo,
+        'server': server,
+        'hash': hash,
+        'access_token': vk_access_token,
+        'v': vk_api_version
+    }
+    vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
+    response = requests.post(vk_api_url, params=payloads)
+    response.raise_for_status()
+    uploaded_picture = response.json()['response'][0]
+
+    vk_api_method = 'wall.post'
+    payloads = {
+        'user_id': user_id,
+        'owner_id': f'-{vk_group_id}',
+        'from_group': 1,
+        'attachments': f"photo{uploaded_picture['owner_id']}_{uploaded_picture['id']}",
+        'message': comics_title,
+        'access_token': vk_access_token,
+        'v': vk_api_version
+    }
+    vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
+    response = requests.post(vk_api_url, params=payloads)
+    response.raise_for_status()
