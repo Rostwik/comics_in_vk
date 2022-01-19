@@ -1,4 +1,5 @@
 import os
+import random
 
 import requests
 
@@ -16,8 +17,14 @@ if __name__ == '__main__':
     vk_application_id = 8054782
 
     pictures_directory = 'images'
-    comics = 353
-    url = f'https://xkcd.com/{comics}/info.0.json'
+
+    current_comic_url = 'https://xkcd.com/info.0.json'
+    response = requests.get(current_comic_url)
+    response.raise_for_status()
+    comics_number = response.json()['num']
+    random_comic = random.randint(1, comics_number)
+
+    url = f'https://xkcd.com/{random_comic}/info.0.json'
 
     response = requests.get(url)
     response.raise_for_status()
@@ -44,7 +51,10 @@ if __name__ == '__main__':
     response.raise_for_status()
     album_id, upload_url, user_id = response.json()['response'].values()
 
-    with open('images/python.png', 'rb') as file:
+    files = os.listdir('images')
+    comic_img = files[0]
+
+    with open(f'images/{comic_img}', 'rb') as file:
         files = {
             'photo': file
         }
@@ -82,3 +92,5 @@ if __name__ == '__main__':
     vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
     response = requests.post(vk_api_url, params=payloads)
     response.raise_for_status()
+
+    os.remove(f'images/{comic_img}')
