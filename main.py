@@ -15,11 +15,11 @@ def main():
     vk_api_version = '5.131.'
     pictures_directory = 'images'
 
-    comic_title, img_name, img = get_comic()
+    comic_title, img_name, img_url = get_comic()
 
-    save_photo(pictures_directory, img_name[1], img)
+    save_photo(pictures_directory, img_name[1], img_url)
 
-    comic_img, uploaded_picture, user_id = get_uploaded_vk_img_attributes(
+    comic_img_name, uploaded_picture, user_id = get_uploaded_vk_img_attributes(
         vk_access_token, vk_api_version, vk_group_id
     )
     vk_photo = uploaded_picture.json()['response'][0]
@@ -36,7 +36,7 @@ def main():
 
     post_vk_api_response(payloads, 'wall.post')
 
-    os.remove(f'images/{comic_img}')
+    os.remove(f'images/{comic_img_name}')
 
 
 def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id):
@@ -49,9 +49,9 @@ def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id)
 
     album_id, upload_url, user_id = upload_vk_attributes.json()['response'].values()
 
-    comic_img = os.listdir('images')[0]
+    comic_img_name = os.listdir('images')[0]
 
-    hash, photo, server = upload_vk_img(comic_img, upload_url)
+    hash, photo, server = upload_vk_img(comic_img_name, upload_url)
 
     payloads = {
         'user_id': user_id,
@@ -64,7 +64,7 @@ def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id)
     }
     uploaded_picture = post_vk_api_response(payloads, 'photos.saveWallPhoto')
 
-    return comic_img, uploaded_picture, user_id
+    return comic_img_name, uploaded_picture, user_id
 
 
 def post_vk_api_response(payloads, vk_api_method):
@@ -92,9 +92,9 @@ def get_comic():
     response = requests.get(current_comic_url)
     response.raise_for_status()
     comics_number = response.json()['num']
-    random_comic = random.randint(1, comics_number)
+    random_comic_number = random.randint(1, comics_number)
 
-    url = f'https://xkcd.com/{random_comic}/info.0.json'
+    url = f'https://xkcd.com/{random_comic_number}/info.0.json'
     response = requests.get(url)
     response.raise_for_status()
     comic = response.json()
