@@ -19,12 +19,34 @@ def main():
 
     save_photo(pictures_directory, img_name[1], img)
 
+    comic_img, uploaded_picture, user_id = get_uploaded_vk_img_attributes(
+        vk_access_token, vk_api_version, vk_group_id
+    )
+    vk_photo = uploaded_picture.json()['response'][0]
+
+    payloads = {
+        'user_id': user_id,
+        'owner_id': f'-{vk_group_id}',
+        'from_group': 1,
+        'attachments': f"photo{vk_photo['owner_id']}_{vk_photo['id']}",
+        'message': comic_title,
+        'access_token': vk_access_token,
+        'v': vk_api_version
+    }
+
+    post_vk_api_response(payloads, 'wall.post')
+
+    os.remove(f'images/{comic_img}')
+
+
+def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id):
     payloads = {
         'access_token': vk_access_token,
         'v': vk_api_version,
         'group_id': vk_group_id,
     }
     upload_vk_attributes = get_vk_api_response(payloads, 'photos.getWallUploadServer')
+
     album_id, upload_url, user_id = upload_vk_attributes.json()['response'].values()
 
     comic_img = os.listdir('images')[0]
@@ -41,21 +63,8 @@ def main():
         'v': vk_api_version
     }
     uploaded_picture = post_vk_api_response(payloads, 'photos.saveWallPhoto')
-    vk_photo = uploaded_picture.json()['response'][0]
 
-    payloads = {
-        'user_id': user_id,
-        'owner_id': f'-{vk_group_id}',
-        'from_group': 1,
-        'attachments': f"photo{vk_photo['owner_id']}_{vk_photo['id']}",
-        'message': comic_title,
-        'access_token': vk_access_token,
-        'v': vk_api_version
-    }
-
-    post_vk_api_response(payloads, 'wall.post')
-
-    os.remove(f'images/{comic_img}')
+    return comic_img, uploaded_picture, user_id
 
 
 def post_vk_api_response(payloads, vk_api_method):
