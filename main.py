@@ -11,8 +11,8 @@ def main():
     load_dotenv()
 
     vk_access_token = os.getenv('VK_ACCESS_TOKEN')
+    vk_group_id = os.getenv('VK_GROUP_ID')
     vk_api_version = '5.131.'
-    vk_group_id = 210209209
     pictures_directory = 'images'
 
     comic_title, img_name, img = get_comic()
