@@ -112,4 +112,8 @@ def get_vk_api_response(payloads, vk_api_method):
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception:
+        comic_img_name = os.listdir('images')[0]
+        os.remove(f'images/{comic_img_name}')
