@@ -51,14 +51,14 @@ def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id)
 
     comic_img_name = os.listdir('images')[0]
 
-    hash, photo, server = upload_vk_img(comic_img_name, upload_url)
+    vk_hash, photo, server = upload_vk_img(comic_img_name, upload_url)
 
     payloads = {
         'user_id': user_id,
         'group_id': vk_group_id,
         'photo': photo,
         'server': server,
-        'hash': hash,
+        'hash': vk_hash,
         'access_token': vk_access_token,
         'v': vk_api_version
     }
