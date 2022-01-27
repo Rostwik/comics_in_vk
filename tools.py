@@ -19,3 +19,12 @@ def save_photo(directory_name, image_name, image_url, payloads=None, ext=''):
     path_to_save = f'{directory_name}/{image_name}{ext}'
     with open(path_to_save, 'wb') as file:
         file.write(response.content)
+
+
+def is_vk_error(response):
+    if response.json().get('error'):
+        vk_error = response.json()['error']
+        raise requests.HTTPError(
+            f"Код ошибки: {vk_error['error_code']} \n"
+            f"Описание ошибки:  {vk_error['error_msg']}"
+        )

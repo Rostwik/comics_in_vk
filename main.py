@@ -3,7 +3,7 @@ import random
 
 import requests
 
-from tools import save_photo, get_file_name
+from tools import save_photo, get_file_name, is_vk_error
 from dotenv import load_dotenv
 
 
@@ -70,6 +70,10 @@ def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id)
 def post_vk_api_response(payloads, vk_api_method):
     vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
     response = requests.post(vk_api_url, params=payloads)
+    try:
+        is_vk_error(response)
+    except requests.HTTPError as exp:
+        print(exp)
     response.raise_for_status()
 
     return response
@@ -80,11 +84,17 @@ def upload_vk_img(comic_img, upload_url):
         files = {
             'photo': file
         }
-
         response = requests.post(upload_url, files=files)
-        response.raise_for_status()
-        server, photo, hash = response.json().values()
-    return hash, photo, server
+
+    try:
+        is_vk_error(response)
+    except requests.HTTPError as exp:
+        print(exp)
+    response.raise_for_status()
+
+    server, photo, vk_hash = response.json().values()
+
+    return vk_hash, photo, server
 
 
 def get_comic():
@@ -107,6 +117,10 @@ def get_comic():
 def get_vk_api_response(payloads, vk_api_method):
     vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
     response = requests.get(vk_api_url, params=payloads)
+    try:
+        is_vk_error(response)
+    except requests.HTTPError as exp:
+        print(exp)
     response.raise_for_status()
     return response
 
