@@ -2,41 +2,9 @@ import os
 import random
 
 import requests
-
-from tools import save_photo, get_file_name, is_vk_error
 from dotenv import load_dotenv
 
-
-def main():
-    load_dotenv()
-
-    vk_access_token = os.getenv('VK_ACCESS_TOKEN')
-    vk_group_id = os.getenv('VK_GROUP_ID')
-    vk_api_version = '5.131.'
-    pictures_directory = 'images'
-
-    comic_title, img_name, img_url = get_comic()
-
-    save_photo(pictures_directory, img_name[1], img_url)
-
-    comic_img_name, uploaded_picture, user_id = get_uploaded_vk_img_attributes(
-        vk_access_token, vk_api_version, vk_group_id
-    )
-    vk_photo = uploaded_picture.json()['response'][0]
-
-    payloads = {
-        'user_id': user_id,
-        'owner_id': f'-{vk_group_id}',
-        'from_group': 1,
-        'attachments': f"photo{vk_photo['owner_id']}_{vk_photo['id']}",
-        'message': comic_title,
-        'access_token': vk_access_token,
-        'v': vk_api_version
-    }
-
-    post_vk_api_response(payloads, 'wall.post')
-
-    os.remove(f'images/{comic_img_name}')
+from tools import save_photo, get_file_name, is_vk_error
 
 
 def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id):
@@ -70,11 +38,6 @@ def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id)
 def post_vk_api_response(payloads, vk_api_method):
     vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
     response = requests.post(vk_api_url, params=payloads)
-    try:
-        is_vk_error(response)
-    except requests.HTTPError as exp:
-        print(exp)
-    response.raise_for_status()
 
     return response
 
@@ -86,10 +49,6 @@ def upload_vk_img(comic_img, upload_url):
         }
         response = requests.post(upload_url, files=files)
 
-    try:
-        is_vk_error(response)
-    except requests.HTTPError as exp:
-        print(exp)
     response.raise_for_status()
 
     server, photo, vk_hash = response.json().values()
@@ -117,17 +76,53 @@ def get_comic():
 def get_vk_api_response(payloads, vk_api_method):
     vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
     response = requests.get(vk_api_url, params=payloads)
-    try:
-        is_vk_error(response)
-    except requests.HTTPError as exp:
-        print(exp)
+
     response.raise_for_status()
     return response
 
 
-if __name__ == '__main__':
+def main():
+    load_dotenv()
+
+    vk_access_token = os.getenv('VK_ACCESS_TOKEN')
+    vk_group_id = os.getenv('VK_GROUP_ID')
+    vk_api_version = '5.131.'
+    pictures_directory = 'images'
+
+    comic_title, img_name, img_url = get_comic()
+
+    save_photo(pictures_directory, img_name[1], img_url)
+
+    comic_img_name, uploaded_picture, user_id = get_uploaded_vk_img_attributes(
+        vk_access_token, vk_api_version, vk_group_id
+    )
     try:
-        main()
-    except Exception:
+        is_vk_error(uploaded_picture)
+    except requests.HTTPError as exp:
+        print(exp)
+    finally:
         comic_img_name = os.listdir('images')[0]
         os.remove(f'images/{comic_img_name}')
+
+    vk_photo = uploaded_picture.json()['response'][0]
+
+    payloads = {
+        'user_id': user_id,
+        'owner_id': f'-{vk_group_id}',
+        'from_group': 1,
+        'attachments': f"photo{vk_photo['owner_id']}_{vk_photo['id']}",
+        'message': comic_title,
+        'access_token': vk_access_token,
+        'v': vk_api_version
+    }
+
+    post_vk_wall_comic = post_vk_api_response(payloads, 'wall.post')
+
+    try:
+        is_vk_error(post_vk_wall_comic)
+    except requests.HTTPError as exp:
+        print(exp)
+
+
+if __name__ == '__main__':
+    main()
