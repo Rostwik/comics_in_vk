@@ -71,11 +71,14 @@ def get_comic():
     url = f'https://xkcd.com/{random_comic_number}/info.0.json'
     response = requests.get(url)
     response.raise_for_status()
+
     comic = response.json()
     comic_title = comic['alt']
-    img_name = get_file_name(comic['img'])
+    comic_img_url = comic['img']
 
-    return comic_title, img_name, comic['img']
+    img_name = get_file_name(comic_img_url)
+
+    return comic_title, img_name, comic_img_url
 
 
 def main():
@@ -88,7 +91,7 @@ def main():
 
     comic_title, img_name, img_url = get_comic()
 
-    save_photo(pictures_directory, img_name[1], img_url)
+    save_photo(pictures_directory, img_name, img_url)
 
     comic_img_name, uploaded_picture, user_id = get_uploaded_vk_img_attributes(
         vk_access_token, vk_api_version, vk_group_id
