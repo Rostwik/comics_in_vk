@@ -23,10 +23,11 @@ def save_photo(directory_name, image_name, image_url, payloads=None, ext=''):
 
 def is_vk_error(response):
     vk_response = response.json()
-    if vk_response.get('error'):
-        vk_error = vk_response['error']
-        
+
+    error = vk_response.get('error')
+    if error:
+
         raise requests.HTTPError(
-            f"Код ошибки: {vk_error['error_code']} \n"
-            f"Описание ошибки:  {vk_error['error_msg']}"
+            f"Код ошибки: {error['error_code']} \n"
+            f"Описание ошибки:  {error['error_msg']}"
         )
