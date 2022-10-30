@@ -26,8 +26,9 @@ def is_vk_error(response):
 
     error = vk_response.get('error')
     if error:
-
         raise requests.HTTPError(
             f"Код ошибки: {error['error_code']} \n"
             f"Описание ошибки:  {error['error_msg']}"
         )
+
+    return vk_response

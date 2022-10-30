@@ -13,14 +13,18 @@ def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id)
         'v': vk_api_version,
         'group_id': vk_group_id,
     }
-    upload_vk_attributes = vk_api_response(payloads, 'photos.getWallUploadServer')
+
+    vk_api_url = f'https://api.vk.com/method/photos.getWallUploadServer'
+    response = requests.get(vk_api_url, params=payloads)
+    response.raise_for_status()
+    upload_vk_attributes = response
 
     album_id, upload_url, user_id = upload_vk_attributes.json()['response'].values()
 
-    comic_img_name = os.listdir('images')[0]
+    return upload_url, user_id
 
-    vk_hash, photo, server = upload_vk_img(comic_img_name, upload_url)
 
+def save_wall_photo(user_id, vk_group_id, photo, server, vk_hash, vk_access_token, vk_api_version):
     payloads = {
         'user_id': user_id,
         'group_id': vk_group_id,
@@ -30,21 +34,13 @@ def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id)
         'access_token': vk_access_token,
         'v': vk_api_version
     }
-    uploaded_picture = vk_api_response(payloads, 'photos.saveWallPhoto', 'post')
 
-    return comic_img_name, uploaded_picture, user_id
-
-
-def vk_api_response(payloads, vk_api_method, request_type='get'):
-    vk_api_url = f'https://api.vk.com/method/{vk_api_method}'
-
-    if request_type == 'post':
-        response = requests.post(vk_api_url, params=payloads)
-    else:
-        response = requests.get(vk_api_url, params=payloads)
-
+    vk_api_url = f'https://api.vk.com/method/photos.saveWallPhoto'
+    response = requests.post(vk_api_url, params=payloads)
     response.raise_for_status()
-    return response
+    uploaded_picture = is_vk_error(response)
+
+    return uploaded_picture
 
 
 def upload_vk_img(comic_img, upload_url):
@@ -55,8 +51,9 @@ def upload_vk_img(comic_img, upload_url):
         response = requests.post(upload_url, files=files)
 
     response.raise_for_status()
+    vk_response = is_vk_error(response)
 
-    server, photo, vk_hash = response.json().values()
+    server, photo, vk_hash = vk_response.values()
 
     return vk_hash, photo, server
 
@@ -93,18 +90,25 @@ def main():
 
     save_photo(pictures_directory, img_name, img_url)
 
-    comic_img_name, uploaded_picture, user_id = get_uploaded_vk_img_attributes(
+    upload_url, user_id = get_uploaded_vk_img_attributes(
         vk_access_token, vk_api_version, vk_group_id
     )
-    try:
-        is_vk_error(uploaded_picture)
-    except requests.HTTPError as exp:
-        print(exp)
-    finally:
-        comic_img_name = os.listdir('images')[0]
-        os.remove(f'images/{comic_img_name}')
 
-    vk_photo = uploaded_picture.json()['response'][0]
+    comic_img_name = os.listdir('images')[0]
+
+    vk_hash, photo, server = upload_vk_img(comic_img_name, upload_url)
+
+    uploaded_picture = save_wall_photo(
+        user_id,
+        vk_group_id,
+        photo,
+        server,
+        vk_hash,
+        vk_access_token,
+        vk_api_version
+    )
+
+    vk_photo = uploaded_picture['response'][0]
 
     payloads = {
         'user_id': user_id,
@@ -116,13 +120,19 @@ def main():
         'v': vk_api_version
     }
 
-    post_vk_wall_comic = vk_api_response(payloads, 'wall.post', 'post')
+    vk_api_url = f'https://api.vk.com/method/wall.post'
+    response = requests.post(vk_api_url, params=payloads)
+    response.raise_for_status()
+    post_vk_wall_comic = response
 
-    try:
-        is_vk_error(post_vk_wall_comic)
-    except requests.HTTPError as exp:
-        print(exp)
+    is_vk_error(post_vk_wall_comic)
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except requests.HTTPError as exp:
+        print(exp)
+    finally:
+        comic_img_name = os.listdir('images')[0]
+        os.remove(f'images/{comic_img_name}')
