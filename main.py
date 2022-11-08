@@ -15,11 +15,11 @@ def get_uploaded_vk_img_attributes(vk_access_token, vk_api_version, vk_group_id)
     }
 
     vk_api_url = f'https://api.vk.com/method/photos.getWallUploadServer'
-    upload_vk_attributes = requests.get(vk_api_url, params=payloads)
-    upload_vk_attributes.raise_for_status()
-    is_vk_error(upload_vk_attributes)
+    vk_img_attributes = requests.get(vk_api_url, params=payloads)
+    vk_img_attributes.raise_for_status()
+    is_vk_error(vk_img_attributes)
 
-    _, upload_url, user_id = upload_vk_attributes.json()['response'].values()
+    _, upload_url, user_id = vk_img_attributes.json()['response'].values()
 
     return upload_url, user_id
 
